@@ -155,16 +155,29 @@ rt {
    Applied to NotebookCard content area. The line colour is overridden
    per mode via --ruled-line-color set as an inline style on the card.
 */
+
 .notebook-lines {
   background-image: repeating-linear-gradient(
     to bottom,
     transparent,
-    transparent 20px,
-    var(--ruled-line-color, var(--color-paper-3)) 20px,
-    var(--ruled-line-color, var(--color-paper-3)) 20.5px
+    transparent 35.5px,
+    var(--ruled-line-color, var(--color-paper-3)) 35.5px,
+    var(--ruled-line-color, var(--color-paper-3)) 36px
   );
+  /* Mobile default: p-4 = 16px top padding */
+  background-position-y: 16px;
 }
 
+/* Desktop: p-6 = 24px top padding */
+@media (min-width: 640px) {
+  .notebook-lines {
+    background-position-y: 24px;
+  }
+}
+
+.notebook-stem {
+  line-height: 1.8;
+}
 /* ─── Utility: safe area padding (iPhone home indicator) ────────────────── */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
