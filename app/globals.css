@@ -1,26 +1,175 @@
+/* app/globals.css */
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ─── Font face declarations ────────────────────────────────────────────────
+   next/font/google injects the actual @font-face rules automatically.
+   We reference the CSS variables it exposes (set on <html> in layout.tsx).
+   The --font-* variables below wire those into Tailwind's utility classes.
+*/
 
+/* ─── Theme tokens ──────────────────────────────────────────────────────────
+   @theme inline means these variables are available as Tailwind utilities
+   AND as CSS custom properties on :root.
+
+   Naming convention: --color-{name}-{variant}
+     → generates bg-{name}-{variant}, text-{name}-{variant}, border-{name}-{variant}
+
+   The DEFAULT variant is referenced with just the name: --color-sakura → bg-sakura
+   Nested variants use hyphens: --color-sakura-deep → bg-sakura-deep
+*/
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* ── Sakura palette — dusty rose ────────────────────────── */
+  --color-sakura: #c4728a; /* brand, active states, buttons, nav indicators  */
+  --color-sakura-deep: #9e4f68; /* active text, headings on light backgrounds     */
+  --color-sakura-mid: #d4899a; /* borders, focus rings                           */
+  --color-sakura-soft: #eab8c4; /* passage left borders                           */
+  --color-sakura-pale: #f7ecf0; /* tag backgrounds, learned word pills, spine bg  */
+  --color-sakura-wash: #fdf4f6; /* active tab bg, hover states                    */
+
+  /* ── Sage palette — correct feedback green ──────────────── */
+  --color-sage: #6b8f5e; /* correct answer hanko border, stamp colour      */
+  --color-sage-deep: #4a6b3e; /* feedback explanation text                      */
+  --color-sage-mid: #8aad7c; /* correct choice border                          */
+  --color-sage-pale: #eaf2e6; /* correct choice background, feedback bar bg     */
+
+  /* ── Anko palette — deep warm plum (text) ───────────────── */
+  --color-anko: #4a2d3a; /* all primary text                               */
+  --color-anko-mid: #7a5568; /* secondary labels, inactive nav items           */
+  --color-anko-light: #c4a8b4; /* placeholders, timestamps, counts               */
+
+  /* ── Paper palette — warm off-white surfaces ────────────── */
+  --color-paper: #fdfaf8; /* page background                                */
+  --color-paper-2: #f7f1f3; /* sidebar bg, input bg, choice hover             */
+  --color-paper-3: #ede3e7; /* card borders, dividers, ruled lines            */
+  --color-paper-4: #e0d4d8; /* stacked page shadow layer                      */
+
+  /* ── Slate palette — test mode dark overlay ─────────────── */
+  --color-slate: #23262e; /* test bg                                        */
+  --color-slate-2: #2e3240; /* test surface / card bg                         */
+  --color-slate-3: #3a3f50; /* test border                                    */
+  --color-slate-4: #4e5468; /* intermediate shade                             */
+  --color-slate-5: #6b7285; /* test muted text                                */
+
+  /* ── Drill palette — warm amber / ochre ─────────────────── */
+  --color-drill: #fbf5ef; /* drill page bg                                  */
+  --color-drill-spine: #f5e8d8; /* spine strip                                    */
+  --color-drill-ring: #d4b070; /* spiral ring indicator                          */
+  --color-drill-border: #e8d8c4; /* ruled lines and card borders                   */
+  --color-drill-accent: #b8956a; /* primary accent in drill mode                   */
+
+  /* ── Wrong answer — universal across all modes ──────────── */
+  --color-wrong-bg: #fcebeb;
+  --color-wrong-border: #f09595;
+  --color-wrong-text: #501313;
+
+  /* ── Font families ───────────────────────────────────────── */
+  /* These reference CSS variables injected by next/font/google via layout.tsx */
+  --font-serif: var(--font-noto-serif-jp), serif;
+  --font-sans: var(--font-noto-sans-jp), sans-serif;
+  --font-mono: var(--font-dm-mono), monospace;
+
+  /* ── Font sizes ──────────────────────────────────────────── */
+  /* Named sizes matching the design doc ranges */
+  --text-xs: 0.6875rem; /* 11px */
+  --text-sm: 0.75rem; /* 12px */
+  --text-base: 0.8125rem; /* 13px */
+  --text-md: 0.875rem; /* 14px */
+  --text-lg: 0.9375rem; /* 15px */
+  --text-xl: 1rem; /* 16px */
+  --text-2xl: 1.125rem; /* 18px */
+  --text-3xl: 1.25rem; /* 20px */
+  --text-4xl: 1.375rem; /* 22px */
+
+  /* ── Spacing additions ───────────────────────────────────── */
+  --spacing-spine: 30px; /* desktop spine width  */
+  --spacing-spine-mobile: 24px; /* mobile spine width   */
+
+  /* ── Animations ──────────────────────────────────────────── */
+  --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+  --animate-progress-bar: progress-bar 0.8s ease-out forwards;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ─── Keyframe definitions ──────────────────────────────────────────────────
+   Defined outside @theme — keyframes are not theme tokens, they're rules.
+*/
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
+@keyframes progress-bar {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 80%;
+  }
+}
+
+/* ─── Base styles ───────────────────────────────────────────────────────────
+   Document-level defaults. In Tailwind 4 we write these as plain CSS
+   rather than using @layer base (though @layer base still works too).
+*/
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-paper);
+  color: var(--color-anko);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Ruby / furigana ───────────────────────────────────────────────────────*/
+ruby {
+  ruby-align: center;
+}
+
+rt {
+  font-size: 0.6em; /* ~8–9px when parent is 14–15px, per design doc */
+  font-family: var(--font-sans);
+  color: var(--color-anko-light);
+  line-height: 1;
+}
+
+/* ─── Focus ring ─────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-sakura-mid);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Utility: notebook ruled lines ─────────────────────────────────────────
+   Applied to NotebookCard content area. The line colour is overridden
+   per mode via --ruled-line-color set as an inline style on the card.
+*/
+.notebook-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 20px,
+    var(--ruled-line-color, var(--color-paper-3)) 20px,
+    var(--ruled-line-color, var(--color-paper-3)) 20.5px
+  );
+}
+
+/* ─── Utility: safe area padding (iPhone home indicator) ────────────────── */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }

@@ -1,103 +1,182 @@
-import Image from "next/image";
+// app/page.tsx
+// TEMPORARY — verification page for Step 1.
+// Delete and replace in Step 5 (study mode screen).
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen bg-paper p-8">
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* ── App wordmark ── */}
+      <div className="mb-10">
+        <span className="font-serif text-4xl text-sakura-deep font-semibold">
+          語
+        </span>
+        <span className="font-serif text-xl text-anko ml-3">
+          kotoba
+        </span>
+      </div>
+
+      {/* ── Typography check ── */}
+      <section className="mb-8 space-y-2">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Typography
+        </h2>
+        <p className="font-serif text-4xl text-anko">
+          日本語テスト — Noto Serif JP 400
+        </p>
+        <p className="font-serif text-4xl font-semibold text-anko">
+          日本語テスト — Noto Serif JP 600
+        </p>
+        <p className="font-sans text-md text-anko">
+          日本語テスト — Noto Sans JP 400
+        </p>
+        <p className="font-sans text-md font-medium text-anko">
+          日本語テスト — Noto Sans JP 500
+        </p>
+        <p className="font-mono text-base text-anko">
+          でんしゃ · 0123 — DM Mono 400
+        </p>
+        <p className="font-mono text-base font-medium text-anko">
+          でんしゃ · 0123 — DM Mono 500
+        </p>
+      </section>
+
+      {/* ── Sakura palette ── */}
+      <section className="mb-8">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Sakura palette
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { cls: 'bg-sakura', label: 'sakura' },
+            { cls: 'bg-sakura-deep', label: 'sakura-deep' },
+            { cls: 'bg-sakura-mid', label: 'sakura-mid' },
+            { cls: 'bg-sakura-soft', label: 'sakura-soft' },
+            { cls: 'bg-sakura-pale', label: 'sakura-pale' },
+            { cls: 'bg-sakura-wash', label: 'sakura-wash' },
+          ].map(({ cls, label }) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <div className={`w-12 h-12 rounded border border-paper-3 ${cls}`} />
+              <span className="font-mono text-xs text-anko-mid">{label}</span>
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </section>
+
+      {/* ── Sage palette ── */}
+      <section className="mb-8">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Sage palette
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { cls: 'bg-sage', label: 'sage' },
+            { cls: 'bg-sage-deep', label: 'sage-deep' },
+            { cls: 'bg-sage-mid', label: 'sage-mid' },
+            { cls: 'bg-sage-pale', label: 'sage-pale' },
+          ].map(({ cls, label }) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <div className={`w-12 h-12 rounded border border-paper-3 ${cls}`} />
+              <span className="font-mono text-xs text-anko-mid">{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Anko / paper palettes ── */}
+      <section className="mb-8">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Anko + paper palette
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { cls: 'bg-anko', label: 'anko' },
+            { cls: 'bg-anko-mid', label: 'anko-mid' },
+            { cls: 'bg-anko-light', label: 'anko-light' },
+            { cls: 'bg-paper', label: 'paper' },
+            { cls: 'bg-paper-2', label: 'paper-2' },
+            { cls: 'bg-paper-3', label: 'paper-3' },
+            { cls: 'bg-paper-4', label: 'paper-4' },
+          ].map(({ cls, label }) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <div className={`w-12 h-12 rounded border border-paper-3 ${cls}`} />
+              <span className="font-mono text-xs text-anko-mid">{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Slate + drill palettes ── */}
+      <section className="mb-8">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Slate (test) + drill palette
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { cls: 'bg-slate', label: 'slate' },
+            { cls: 'bg-slate-2', label: 'slate-2' },
+            { cls: 'bg-slate-3', label: 'slate-3' },
+            { cls: 'bg-slate-4', label: 'slate-4' },
+            { cls: 'bg-slate-5', label: 'slate-5' },
+            { cls: 'bg-drill', label: 'drill' },
+            { cls: 'bg-drill-spine', label: 'drill-spine' },
+            { cls: 'bg-drill-ring', label: 'drill-ring' },
+            { cls: 'bg-drill-border', label: 'drill-border' },
+            { cls: 'bg-drill-accent', label: 'drill-accent' },
+          ].map(({ cls, label }) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <div className={`w-12 h-12 rounded border border-paper-3 ${cls}`} />
+              <span className="font-mono text-xs text-anko-mid">{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Wrong answer colour ── */}
+      <section className="mb-8">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Wrong answer
+        </h2>
+        <div
+          className="inline-block px-4 py-2 rounded font-sans text-md font-medium"
+          style={{
+            backgroundColor: '#FCEBEB',
+            borderColor: '#F09595',
+            color: '#501313',
+            border: '1px solid #F09595',
+          }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+          誤 — incorrect answer state
+        </div>
+      </section>
+
+      {/* ── Furigana check ── */}
+      <section className="mb-8">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Furigana (ruby tag)
+        </h2>
+        <p className="font-serif text-3xl text-anko">
+          <ruby>電車<rt>でんしゃ</rt></ruby>に
+          <ruby>乗<rt>の</rt></ruby>ります。
+        </p>
+        <p className="font-sans text-md text-anko-mid mt-1">
+          rt renders at ~0.6em in Noto Sans JP — should be ~8–9px at text-3xl
+        </p>
+      </section>
+
+      {/* ── Notebook lines utility ── */}
+      <section className="mb-8">
+        <h2 className="font-mono text-xs text-anko-light uppercase tracking-widest mb-3">
+          Notebook lines utility
+        </h2>
+        <div
+          className="notebook-lines h-32 w-full max-w-md rounded border border-paper-3 bg-paper"
+        />
+        <p className="font-sans text-xs text-anko-light mt-1">
+          Horizontal ruled lines every 20px — paper-3 colour
+        </p>
+      </section>
+
+    </main>
+  )
 }
