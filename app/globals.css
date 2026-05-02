@@ -178,6 +178,10 @@ rt {
 .notebook-stem {
   line-height: 1.8;
 }
+
+.notebook-stem-text {
+  font-size: 18px;
+}
 /* ─── Utility: safe area padding (iPhone home indicator) ────────────────── */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
