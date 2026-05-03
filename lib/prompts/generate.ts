@@ -102,7 +102,7 @@ const readingInstructions = `
 Generate a JLPT N5 reading comprehension question.
 
 **RULES:**
-- Passage: 2–4 Japanese sentences at strict N5 level. Must be grammatically correct and natural.
+- Passage: 4–5 Japanese sentences at strict N5 level. Must be grammatically correct and natural.
 - passageFurigana: map EVERY kanji in the passage to its correct hiragana reading. Do not miss any.
 - Stem: a simple English comprehension question about the passage.
 - Instruction: "Read the passage and answer the question."
@@ -110,24 +110,38 @@ Generate a JLPT N5 reading comprehension question.
 - targetWord, targetReading, targetMeaning: empty strings "".
 - furiganaMap: {} (stem is English).
 
-**Example output (reading):**
+**Example output (reading) with 4 sentences:**
 {
   "type": "reading",
   "targetWord": "",
   "targetReading": "",
   "targetMeaning": "",
-  "stem": "What time does the person wake up?",
+  "stem": "What did the person buy at the supermarket?",
   "furiganaMap": {},
   "instruction": "Read the passage and answer the question.",
-  "passage": "私は毎朝6時に起きます。そして、朝ごはんを食べてから学校に行きます。",
-  "passageFurigana": { "私": "わたし", "毎朝": "まいあさ", "起": "お", "朝": "あさ", "食": "た", "学校": "がっこう", "行": "い" },
-  "choices": ["5:00", "6:00", "7:00", "8:00"],
-  "correctIndex": 1,
-  "explanation": "The passage explicitly says '毎朝6時に起きます' (I wake up at 6 a.m. every morning).",
+  "passage": "私は先週の日曜日にスーパーへ買い物に行きました。スーパーで野菜と果物を買いました。特にりんごとバナナを買いました。そして、家に帰って果物を食べました。",
+  "passageFurigana": {
+    "私": "わたし",
+    "先週": "せんしゅう",
+    "日曜日": "にちようび",
+    "スーパー": "すーぱー",
+    "買": "か",
+    "物": "もの",
+    "行": "い",
+    "野": "や",
+    "菜": "さい",
+    "果": "くだ",
+    "物": "もの",
+    "特": "とく",
+    "帰": "かえ",
+    "食": "た"
+  },
+  "choices": ["Vegetables and fruit", "Meat and fish", "Bread and milk", "Rice and eggs"],
+  "correctIndex": 0,
+  "explanation": "The passage says '野菜と果物を買いました' (bought vegetables and fruit).",
   "memoryHook": ""
 }
 `.trim();
-
 // ============================================================================
 // Type mapping
 // ============================================================================
@@ -180,4 +194,5 @@ export function generateQuestionPrompt(type: QuestionType): string {
   return `${BASE_SYSTEM}\n\n${typeInstructions[type]}`;
 }
 
-export const GENERATE_TRIGGER = "Generate a single question now. Output ONLY the JSON object, nothing else.";
+export const GENERATE_TRIGGER =
+  "Generate a single question now. Output ONLY the JSON object, nothing else.";
