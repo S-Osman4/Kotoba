@@ -26,7 +26,7 @@ import StreamingResponse from '@/components/chat/StreamingResponse'
 import Toast from '@/components/ui/Toast'
 import { useStream } from '@/hooks/useStream'
 import { useToast } from '@/hooks/useToast'
-import { apiFetch, ApiError } from '@/lib/api'
+import { apiFetch, ApiError, fetchLearnedCount } from '@/lib/api'
 import type { Question, SubMode } from '@/types/question'
 import type { SessionContext } from '@/types/session'
 
@@ -82,6 +82,14 @@ export default function StudyPage() {
   // Incremented immediately on correct answer, rolled back if save fails.
   const [learnedCount, setLearnedCount] = useState(0)
 
+  const fetchCount = useCallback(() => {
+    fetchLearnedCount().then(setLearnedCount).catch(() => console.warn('failed to load count'))
+  }, [])
+
+  useEffect(() => {
+    fetchCount()
+  }, [fetchCount])
+
   // Pending save payload — kept so the toast retry can resend it.
   const [pendingPayload, setPendingPayload] = useState<ProgressPayload | null>(null)
 
@@ -135,32 +143,27 @@ export default function StudyPage() {
     setSubMode(mode)
     setConsecutiveFails(0)
     fetchQuestion(mode)
+    fetchCount()   // refresh learned count
   }
 
   // ── Save to logbook ─────────────────────────────────────────────────────────
 
   const saveProgress = useCallback(async (payload: ProgressPayload) => {
     try {
-      await apiFetch('/api/progress', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      // Success — clear pending payload and any existing error toast
+      await apiFetch('/api/progress', { method: 'POST', body: JSON.stringify(payload) })
+      // Refresh count after successful save
+      await fetchCount()
       setPendingPayload(null)
       dismissToast()
     } catch (err) {
-      const word = payload.word
       console.error('[study] saveProgress failed:', err)
-
-      // Roll back the optimistic count
-      setLearnedCount(prev => Math.max(0, prev - 1))
-
-      // Store payload so toast retry can resend it
       setPendingPayload(payload)
-
-      showError(`couldn't save ${word} to your logbook — tap to retry`)
+      showError(`couldn't save ${payload.word} to your logbook — tap to retry`)
+      // Keep pending payload for retry, but do not increment count
+      setPendingPayload(payload)
+      showError(`couldn't save ${payload.word} to your logbook — tap to retry`)
     }
-  }, [dismissToast, showError])
+  }, [dismissToast, showError, fetchCount])
 
   // Add a ref to track retry-in-progress
   const retryingRef = useRef(false)
@@ -198,23 +201,20 @@ export default function StudyPage() {
 
   const handleSelect = useCallback((index: number) => {
     if (answered || fetchState.status !== 'success') return
-
     setSelectedIndex(index)
-
     const { question } = fetchState
     const isCorrect = index === question.correctIndex
-
-    // Reading comprehension never writes to the logbook (design doc §2.5)
     if (isCorrect && question.type !== 'reading') {
-      setLearnedCount(prev => prev + 1)
+      // No optimistic increment – the server response will update the count
       saveProgress(buildProgressPayload(question))
     }
   }, [answered, fetchState, saveProgress])
 
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
-  const handleNext = () => fetchQuestion(subMode)
-  const handleSkip = () => fetchQuestion(subMode)
+  const handleNext = useCallback(() => fetchQuestion(subMode), [fetchQuestion, subMode]);
+  const handleSkip = useCallback(() => fetchQuestion(subMode), [fetchQuestion, subMode]);
 
   // ── Chat ────────────────────────────────────────────────────────────────────
 
@@ -248,6 +248,22 @@ export default function StudyPage() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   const isLoading = fetchState.status === 'loading'
+
+  const handleChipSelect = useCallback((message: string) => {
+    // Special handling for "new question" chip
+    if (message === 'Give me a new question on this topic.') {
+      if (!answered) {
+        // Prompt user to answer first
+        showError('Please answer the current question first.');
+        return;
+      }
+      // Answered → fetch new question
+      handleNext();
+      return;
+    }
+    // All other chips send message to AI
+    sendMessage(message);
+  }, [answered, handleNext, sendMessage, showError]);
 
   return (
     <div className="min-h-screen bg-paper">
@@ -406,7 +422,7 @@ export default function StudyPage() {
                 />
                 <ChipRow
                   chips={STUDY_CHIPS}
-                  onChipSelect={sendMessage}
+                  onChipSelect={handleChipSelect}
                   disabled={isStreaming}
                 />
                 <AskBar

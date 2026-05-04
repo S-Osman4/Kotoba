@@ -34,53 +34,65 @@ export class ApiError extends Error {
     /** HTTP status code */
     public readonly status: number,
     /** Error identifier from the response body, or a generic message */
-    message: string
+    message: string,
   ) {
-    super(message)
-    this.name = 'ApiError'
+    super(message);
+    this.name = "ApiError";
   }
 }
 
 export async function apiFetch<T>(
   path: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
 ): Promise<T> {
   // NEXT_PUBLIC_OWNER_TOKEN is set in .env.local and injected into the
   // browser bundle by Next.js. It must match the server-side OWNER_TOKEN.
-  const token = process.env.NEXT_PUBLIC_OWNER_TOKEN
+  const token = process.env.NEXT_PUBLIC_OWNER_TOKEN;
 
-  const headers = new Headers(init.headers)
+  const headers = new Headers(init.headers);
 
   // Always send JSON content type for API calls
-  if (!headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
   // Attach owner token if available
   if (token) {
-    headers.set('x-owner-token', token)
-  } else if (process.env.NODE_ENV === 'development') {
+    headers.set("x-owner-token", token);
+  } else if (process.env.NODE_ENV === "development") {
     // Remind the developer in the browser console, not just the terminal
     console.warn(
-      '[api] NEXT_PUBLIC_OWNER_TOKEN is not set. ' +
-      'Requests will fail in production unless the token is configured.'
-    )
+      "[api] NEXT_PUBLIC_OWNER_TOKEN is not set. " +
+        "Requests will fail in production unless the token is configured.",
+    );
   }
 
-  const response = await fetch(path, { ...init, headers })
+  const response = await fetch(path, { ...init, headers });
 
   if (!response.ok) {
-    let errorMessage: string
+    let errorMessage: string;
 
     try {
-      const body = await response.json() as { error?: string; detail?: string }
-      errorMessage = body.detail ?? body.error ?? `HTTP ${response.status}`
+      const body = (await response.json()) as {
+        error?: string;
+        detail?: string;
+      };
+      errorMessage = body.detail ?? body.error ?? `HTTP ${response.status}`;
     } catch {
-      errorMessage = `HTTP ${response.status}`
+      errorMessage = `HTTP ${response.status}`;
     }
 
-    throw new ApiError(response.status, errorMessage)
+    throw new ApiError(response.status, errorMessage);
   }
 
-  return response.json() as Promise<T>
+  return response.json() as Promise<T>;
+}
+
+// 
+export async function fetchLearnedCount(): Promise<number> {
+  const today = new Date().toLocaleDateString("en-CA");
+  const data = await apiFetch<{ stats: { total: number } }>(
+    `/api/logbook?today=${encodeURIComponent(today)}`,
+  );
+  return data.stats.total;
 }

@@ -8,6 +8,7 @@ export interface GenerateOptions {
   system: string;
   prompt: string;
   maxTokens?: number;
+  model?: string;
 }
 
 export interface GenerateResult {
@@ -98,6 +99,8 @@ async function generateWithGroq(
     );
   }
 
+  const model = options.model ?? "qwen/qwen3-32b";
+
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
     {
@@ -107,8 +110,8 @@ async function generateWithGroq(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "qwen/qwen3-32b",
-        max_tokens: options.maxTokens ?? 1200,
+        model,
+        max_tokens: options.maxTokens ?? 600,
         temperature: 0.7,
         messages: [
           { role: "system", content: options.system },
