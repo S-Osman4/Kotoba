@@ -1,20 +1,18 @@
 // app/study/page.tsx
 //
-// Study mode screen — Step 6 update.
+// Study mode screen — Step 7 update.
 //
 // Added in this step:
-//   - AskBar with mode-aware label and placeholder
-//   - ChipRow with quick-action chips
-//   - StreamingResponse consuming useStream
-//   - Chat state (last message, streaming text, error) reset on each new question
+//   - POST /api/progress on correct answer (vocabulary, grammar, kanji only)
+//   - Optimistic learnedCount increment in top bar
+//   - Toast notification on save failure with retry
+//   - Toast auto-dismiss on retry success
 //
-// Planned for Step 7:
-//   - Logbook save on correct answer (POST /api/progress)
-//   - Optimistic sidebar pill count update
+// Reading questions never write to the logbook (per design doc §2.5).
 
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import NotebookCard from '@/components/question/NotebookCard'
 import NotebookSkeleton from '@/components/question/NotebookSkeleton'
 import NotebookError from '@/components/question/NotebookError'
@@ -25,7 +23,9 @@ import QuestionActions from '@/components/question/QuestionActions'
 import AskBar from '@/components/chat/AskBar'
 import ChipRow, { STUDY_CHIPS } from '@/components/chat/ChipRow'
 import StreamingResponse from '@/components/chat/StreamingResponse'
+import Toast from '@/components/ui/Toast'
 import { useStream } from '@/hooks/useStream'
+import { useToast } from '@/hooks/useToast'
 import { apiFetch, ApiError } from '@/lib/api'
 import type { Question, SubMode } from '@/types/question'
 import type { SessionContext } from '@/types/session'
@@ -46,6 +46,30 @@ type FetchState =
   | { status: 'error'; consecutiveFails: number }
   | { status: 'success'; question: Question }
 
+// ─── Progress payload ─────────────────────────────────────────────────────────
+
+interface ProgressPayload {
+  word: string
+  reading: string
+  meaning: string
+  category: string
+  firstSentence: string
+  firstSentenceEn: string
+  furiganaMap: string
+}
+
+function buildProgressPayload(question: Question): ProgressPayload {
+  return {
+    word: question.targetWord,
+    reading: question.targetReading,
+    meaning: question.targetMeaning,
+    category: question.type,
+    firstSentence: question.stem,
+    firstSentenceEn: question.choices[question.correctIndex],
+    furiganaMap: JSON.stringify(question.furiganaMap),
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function StudyPage() {
@@ -54,10 +78,18 @@ export default function StudyPage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [consecutiveFails, setConsecutiveFails] = useState(0)
 
-  // The last message the user sent — used to retry on stream error
+  // Optimistic learned word count shown in the top bar.
+  // Incremented immediately on correct answer, rolled back if save fails.
+  const [learnedCount, setLearnedCount] = useState(0)
+
+  // Pending save payload — kept so the toast retry can resend it.
+  const [pendingPayload, setPendingPayload] = useState<ProgressPayload | null>(null)
+
+  // Last chat message — kept so the stream retry can resend it.
   const [lastMessage, setLastMessage] = useState<string | null>(null)
 
   const { streamText, isStreaming, error: streamError, startStream, reset: resetStream } = useStream()
+  const { toast, showError, showSuccess, dismiss: dismissToast } = useToast()
 
   const answered = selectedIndex !== null
 
@@ -68,6 +100,7 @@ export default function StudyPage() {
     setSelectedIndex(null)
     resetStream()
     setLastMessage(null)
+    setPendingPayload(null)
 
     try {
       const question = await apiFetch<Question>('/api/questions', {
@@ -104,27 +137,92 @@ export default function StudyPage() {
     fetchQuestion(mode)
   }
 
+  // ── Save to logbook ─────────────────────────────────────────────────────────
+
+  const saveProgress = useCallback(async (payload: ProgressPayload) => {
+    try {
+      await apiFetch('/api/progress', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      // Success — clear pending payload and any existing error toast
+      setPendingPayload(null)
+      dismissToast()
+    } catch (err) {
+      const word = payload.word
+      console.error('[study] saveProgress failed:', err)
+
+      // Roll back the optimistic count
+      setLearnedCount(prev => Math.max(0, prev - 1))
+
+      // Store payload so toast retry can resend it
+      setPendingPayload(payload)
+
+      showError(`couldn't save ${word} to your logbook — tap to retry`)
+    }
+  }, [dismissToast, showError])
+
+  // Add a ref to track retry-in-progress
+  const retryingRef = useRef(false)
+
+  // ── Retry save from toast ───────────────────────────────────────────────────
+
+  const handleRetrySave = useCallback(async () => {
+    if (!pendingPayload) return
+    // Prevent multiple concurrent retries
+    if (retryingRef.current) return
+    retryingRef.current = true
+
+    // Re-increment optimistically before retrying (only once)
+    setLearnedCount(prev => prev + 1)
+
+    try {
+      await apiFetch('/api/progress', {
+        method: 'POST',
+        body: JSON.stringify(pendingPayload),
+      })
+      // Success – clear pending and show success toast
+      setPendingPayload(null)
+      showSuccess(`saved ${pendingPayload.word}`)
+    } catch {
+      // Failed again – roll back the optimistic increment
+      setLearnedCount(prev => Math.max(0, prev - 1))
+      // Keep the error toast (still shows, no auto-dismiss)
+      showError(`couldn't save ${pendingPayload.word} to your logbook — tap to retry`)
+    } finally {
+      retryingRef.current = false
+    }
+  }, [pendingPayload, showError, showSuccess])
+
   // ── Answer selection ────────────────────────────────────────────────────────
 
-  const handleSelect = (index: number) => {
-    if (answered) return
+  const handleSelect = useCallback((index: number) => {
+    if (answered || fetchState.status !== 'success') return
+
     setSelectedIndex(index)
-    // Step 7: POST /api/progress here if correct
-  }
+
+    const { question } = fetchState
+    const isCorrect = index === question.correctIndex
+
+    // Reading comprehension never writes to the logbook (design doc §2.5)
+    if (isCorrect && question.type !== 'reading') {
+      setLearnedCount(prev => prev + 1)
+      saveProgress(buildProgressPayload(question))
+    }
+  }, [answered, fetchState, saveProgress])
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
-  const handleNext = useCallback(() => fetchQuestion(subMode), [fetchQuestion, subMode]);
-  const handleSkip = useCallback(() => fetchQuestion(subMode), [fetchQuestion, subMode]);
+  const handleNext = () => fetchQuestion(subMode)
+  const handleSkip = () => fetchQuestion(subMode)
 
-  // ── Chat submission ─────────────────────────────────────────────────────────
+  // ── Chat ────────────────────────────────────────────────────────────────────
 
   const sendMessage = useCallback((message: string) => {
     if (fetchState.status !== 'success') return
 
     setLastMessage(message)
 
-    // Build context from current state
     const context: SessionContext = {
       mode: 'study',
       subMode,
@@ -132,12 +230,8 @@ export default function StudyPage() {
       sessionAnswered: answered,
     }
 
-    // Owner token for the middleware
     const token = process.env.NEXT_PUBLIC_OWNER_TOKEN
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers['x-owner-token'] = token
 
     startStream('/api/chat', {
@@ -147,25 +241,13 @@ export default function StudyPage() {
     })
   }, [fetchState, subMode, answered, startStream])
 
-  // Retry the last message after a stream error
-  const handleRetry = useCallback(() => {
+  const handleRetryStream = useCallback(() => {
     if (lastMessage) sendMessage(lastMessage)
   }, [lastMessage, sendMessage])
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   const isLoading = fetchState.status === 'loading'
-
-  // Handle chip clicks – intercept 'new question'
-  const handleChipSelect = useCallback((message: string) => {
-    if (message === 'Give me a new question on this topic.') {
-      if (!isLoading && !isStreaming) {
-        handleNext();
-      }
-      return;
-    }
-    sendMessage(message);
-  }, [handleNext, sendMessage, isLoading, isStreaming]);
 
   return (
     <div className="min-h-screen bg-paper">
@@ -177,14 +259,28 @@ export default function StudyPage() {
             <span className="font-serif text-xl text-sakura-deep font-semibold">語</span>
             <span className="font-serif text-md text-anko-mid">kotoba</span>
           </div>
-          {/* Progress pips — 5 per set. Placeholder until Step 9 wires up real state. */}
-          <div className="flex items-center gap-1.5">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-sakura' : 'bg-paper-3'}`}
-              />
-            ))}
+
+          <div className="flex items-center gap-3">
+            {/* Optimistic learned count pill */}
+            {learnedCount > 0 && (
+              <span className="
+                font-mono text-xs text-sakura-deep
+                bg-sakura-pale border border-sakura-soft
+                px-2 py-0.5 rounded-full
+              ">
+                {learnedCount} learned
+              </span>
+            )}
+
+            {/* Progress pips — placeholder until Step 9 */}
+            <div className="flex items-center gap-1.5">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-sakura' : 'bg-paper-3'}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </header>
@@ -216,10 +312,8 @@ export default function StudyPage() {
       {/* ── Main content ── */}
       <main className="max-w-2xl mx-auto px-4 py-6">
 
-        {/* Loading skeleton */}
         {fetchState.status === 'loading' && <NotebookSkeleton />}
 
-        {/* Error card */}
         {fetchState.status === 'error' && (
           <NotebookError
             consecutiveFails={fetchState.consecutiveFails}
@@ -227,7 +321,6 @@ export default function StudyPage() {
           />
         )}
 
-        {/* Question card */}
         {fetchState.status === 'success' && (() => {
           const { question } = fetchState
 
@@ -237,7 +330,7 @@ export default function StudyPage() {
 
                 {/* Passage — reading type only */}
                 {question.type === 'reading' && question.passage && (
-                  <div className="mb-9 pl-3 border-l-2 border-sakura-soft">   {/* was mb-4 */}
+                  <div className="mb-9 pl-3 border-l-2 border-sakura-soft">
                     <FuriganaText
                       text={question.passage}
                       furiganaMap={question.passageFurigana}
@@ -303,24 +396,19 @@ export default function StudyPage() {
                 loading={isLoading}
               />
 
-              {/* ── Chat section ── */}
+              {/* Chat section */}
               <div className="mt-6">
-                {/* Streaming response */}
                 <StreamingResponse
                   text={streamText}
                   isStreaming={isStreaming}
                   error={streamError}
-                  onRetry={handleRetry}
+                  onRetry={handleRetryStream}
                 />
-
-                {/* Quick-action chips */}
                 <ChipRow
                   chips={STUDY_CHIPS}
-                  onChipSelect={handleChipSelect}
-                  disabled={isStreaming || isLoading}
+                  onChipSelect={sendMessage}
+                  disabled={isStreaming}
                 />
-
-                {/* Ask bar */}
                 <AskBar
                   mode="study"
                   answered={answered}
@@ -331,8 +419,15 @@ export default function StudyPage() {
             </>
           )
         })()}
-
       </main>
+
+      {/* Toast — outside main so it overlays the full screen */}
+      <Toast
+        toast={toast}
+        onRetry={handleRetrySave}
+        onDismiss={dismissToast}
+        isRetrying={retryingRef.current}
+      />
     </div>
   )
 }
