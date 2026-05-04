@@ -77,10 +77,10 @@ Generate a JLPT N5 grammar question testing a particle or grammar pattern.
 // 3. Kanji (with example and strict distractor rules)
 // ============================================================================
 const kanjiInstructions = `
-Generate a JLPT N5 kanji question. **You must output a complete JSON object. Do not refuse. Do not output empty content.**
+Generate a JLPT N5 kanji question. **You must output a complete JSON object. Do not refuse. Do not output empty content. do not repeat the same kanji in consecutive requests.**
 
 Rules:
-- Stem: the kanji alone (e.g., "木", "山", "川").
+- Stem: a single N5 kanji (choose a different one each time – there are many, e.g. 火, 雨, 車, 人, 食, 見, 行, etc.)
 - Instruction: "Choose the correct reading for this kanji."
 - Choices: 4 hiragana readings (one correct, three plausible wrong).
 - targetWord: the kanji.

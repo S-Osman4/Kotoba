@@ -57,9 +57,9 @@ interface QuestionsRequestBody {
  */
 function extractJSON(text: string): unknown {
   // Remove <think>...</think> blocks (including multi-line content)
-  const cleaned = text.replace(/<think>[\s\S]*?<\/think>/g, '');
+  const cleaned = text.replace(/<think>[\s\S]*?<\/think>/g, "");
   const trimmed = cleaned.trim();
-  
+
   // Fast path — starts with {
   if (trimmed.startsWith("{")) {
     try {
@@ -90,10 +90,13 @@ function extractJSON(text: string): unknown {
 async function attemptGeneration(type: QuestionType) {
   const system = generateQuestionPrompt(type);
 
+  const model = type === "kanji" ? "llama-3.3-70b-versatile" : "qwen/qwen3-32b";
+
   const { text } = await generateText({
     system,
     prompt: GENERATE_TRIGGER,
-    maxTokens: 1000,
+    maxTokens: type === "reading" ? 1200 : 700,
+    model, 
   });
 
   const parsed = extractJSON(text);
