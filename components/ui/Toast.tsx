@@ -31,9 +31,10 @@ interface ToastProps {
   onRetry?: () => void
   onDismiss: () => void
   isRetrying?: boolean
+  retryDisabled?: boolean
 }
 
-export default function Toast({ toast, onRetry, onDismiss, isRetrying }: ToastProps) {
+export default function Toast({ toast, onRetry, onDismiss, isRetrying, retryDisabled }: ToastProps) {
   const { visible, variant, message } = toast
 
   return (
@@ -51,47 +52,56 @@ export default function Toast({ toast, onRetry, onDismiss, isRetrying }: ToastPr
       {visible && (
         <div
           className={`
-            flex items-center gap-3
-            px-4 py-3 rounded-lg shadow-lg
-            font-sans text-sm
-            max-w-xs w-max
-            ${variant === 'success'
-              ? 'bg-sage-pale text-sage-deep border border-sage-mid'
-              : 'bg-paper text-anko border border-paper-3'
-            }
-          `}
+      flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg font-sans text-sm
+      max-w-xs w-max
+      ${variant === 'success' ? 'bg-sage-pale text-sage-deep border border-sage-mid' : ''}
+      ${variant === 'error' ? 'bg-paper text-anko border border-paper-3' : ''}
+      ${variant === 'rateLimit' ? 'bg-amber-50 text-amber-800 border border-amber-300' : ''}
+    `}
         >
-          {/* Message */}
+          {/* Message – same for all variants */}
           <span className="flex-1">{message}</span>
 
-          {/* Retry button — error variant only */}
+          {/* Rate‑limit variant – only a dismiss button */}
+          {variant === 'rateLimit' && (
+            <button
+              onClick={onDismiss}
+              aria-label="Dismiss"
+              className="
+          flex-none text-anko-light hover:text-anko-mid
+          transition-colors duration-150
+          focus-visible:outline-none
+        "
+            >
+              ✕
+            </button>
+          )}
+
+          {/* Error variant – retry + dismiss */}
           {variant === 'error' && onRetry && (
             <button
-              onClick={() => {
-                onRetry()
-              }}
-              disabled={isRetrying}
+              onClick={() => onRetry()}
+              disabled={isRetrying || retryDisabled}
               className="
-                flex-none font-sans text-sm font-medium
-                text-sakura hover:text-sakura-deep
-                transition-colors duration-150
-                focus-visible:outline-none focus-visible:underline
-              "
+          flex-none font-sans text-sm font-medium
+          text-sakura hover:text-sakura-deep
+          transition-colors duration-150
+          focus-visible:outline-none focus-visible:underline
+        "
             >
               retry
             </button>
           )}
 
-          {/* Dismiss button — error variant only */}
           {variant === 'error' && (
             <button
               onClick={onDismiss}
               aria-label="Dismiss"
               className="
-                flex-none text-anko-light hover:text-anko-mid
-                transition-colors duration-150
-                focus-visible:outline-none
-              "
+          flex-none text-anko-light hover:text-anko-mid
+          transition-colors duration-150
+          focus-visible:outline-none
+        "
             >
               <svg
                 width="12"

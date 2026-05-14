@@ -25,6 +25,7 @@ import LogDetail from '@/components/logbook/LogDetail'
 import { toLogEntry } from '@/types/logbook'
 import type { LogEntry, LogbookResponse } from '@/types/logbook'
 import { apiFetch } from '@/lib/api'
+import TopBar from '@/components/layout/TopBar'
 
 export default function WordDetailPage() {
     const router = useRouter()
@@ -79,13 +80,14 @@ export default function WordDetailPage() {
         <div className="min-h-screen bg-paper">
 
             {/* ── Top bar with back arrow ── */}
-            <header className="sticky top-0 z-10 bg-paper border-b border-paper-3">
-                <div className="px-4 py-3 flex items-center gap-3">
+            <TopBar
+
+                right={
                     <button
                         onClick={handleBack}
                         aria-label="Back to logbook"
                         className="
-              flex items-center justify-center w-8 h-8 -ml-1 rounded
+              flex items-center justify-center w-8 h-8 rounded
               text-anko-mid hover:text-anko hover:bg-paper-2
               transition-colors duration-150
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sakura-mid
@@ -101,12 +103,8 @@ export default function WordDetailPage() {
                             />
                         </svg>
                     </button>
-
-                    <span className="font-serif text-lg text-anko">
-                        {wordParam ?? 'word'}
-                    </span>
-                </div>
-            </header>
+                }
+            />
 
             {/* ── Content ── */}
             <main>

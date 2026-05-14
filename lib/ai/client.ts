@@ -4,6 +4,8 @@
 // Uses Groq API with Qwen3-32B (best for Japanese).
 // Rate limit warnings help you monitor free tier usage.
 
+import { setGroqRateInfo } from "../groq-rate";
+
 export interface GenerateOptions {
   system: string;
   prompt: string;
@@ -99,7 +101,7 @@ async function generateWithGroq(
     );
   }
 
-  const model = options.model ?? "qwen/qwen3-32b";
+  const model = options.model ?? "llama-3.3-70b-versatile"; //qwen3-32b is best for Japanese, but you can experiment with others if you like
 
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
@@ -124,16 +126,18 @@ async function generateWithGroq(
   const rateLimitInfo = readGroqRateLimitHeaders(response);
   warnIfLow(rateLimitInfo);
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      const retryAfter = response.headers.get("retry-after");
-      throw new Error(
-        `Groq rate limit exceeded (429).${retryAfter ? ` Retry after ${retryAfter}s.` : ""} Check quota at console.groq.com.`,
-      );
-    }
-    const body = await response.text().catch(() => "(unreadable)");
+  if (response.status === 429) {
+    const retryAfter = response.headers.get("retry-after");
+
+    // Push the exhausted token info into the global store so guard sees it
+    const info = readGroqRateLimitHeaders(response);
+    setGroqRateInfo({
+      remainingTokensMinute: info.remainingTokensMinute,
+      limitTokensMinute: info.limitTokensMinute,
+    });
+
     throw new Error(
-      `Groq request failed: ${response.status} ${response.statusText}\n${body}`,
+      `Groq rate limit exceeded (429).${retryAfter ? ` Retry after ${retryAfter}s.` : ""} Check quota at console.groq.com.`,
     );
   }
 
@@ -151,7 +155,12 @@ async function generateWithGroq(
     throw new Error("Groq returned an empty response");
   }
 
-  // ✅ IMPORTANT: Return the result object
+  setGroqRateInfo({
+    remainingTokensMinute: rateLimitInfo.remainingTokensMinute,
+    limitTokensMinute: rateLimitInfo.limitTokensMinute,
+  });
+
+  // Return the result object
   return { text };
 }
 

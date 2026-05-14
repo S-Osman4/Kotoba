@@ -12,6 +12,7 @@
 
 'use client'
 
+import { useAIActionGuard } from '@/hooks/useAIActionGuard'
 import { useState } from 'react'
 
 // ─── Chip definitions ─────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ export const STUDY_CHIPS: Chip[] = [
 interface ChipRowProps {
     chips: Chip[]
     onChipSelect: (message: string) => void
+    onNewQuestion?: () => void
     /** Disable all chips while streaming */
     disabled?: boolean
 }
@@ -46,9 +48,11 @@ interface ChipRowProps {
 export default function ChipRow({
     chips,
     onChipSelect,
+    onNewQuestion,
     disabled = false,
 }: ChipRowProps) {
     const [expanded, setExpanded] = useState(false)
+    const { guard } = useAIActionGuard(5000) 
 
     // On mobile we show first 2 chips + a "more" chip
     // On desktop we show all chips
@@ -58,9 +62,13 @@ export default function ChipRow({
     const restChips = chips.slice(2)
     const hasMore = restChips.length > 0
 
-    const handleChip = (message: string) => {
+    const handleChip = (chip: Chip) => {
         if (disabled) return
-        onChipSelect(message)
+        if (chip.label === 'new question' && onNewQuestion) {
+            guard(onNewQuestion) 
+        } else {
+            guard(() => onChipSelect(chip.message))
+        }
     }
 
     const chipClass = `
@@ -80,7 +88,7 @@ export default function ChipRow({
             {firstTwo.map((chip) => (
                 <button
                     key={chip.label}
-                    onClick={() => handleChip(chip.message)}
+                    onClick={() => handleChip(chip)}
                     disabled={disabled}
                     className={chipClass}
                 >
@@ -92,7 +100,7 @@ export default function ChipRow({
             {restChips.map((chip) => (
                 <button
                     key={chip.label}
-                    onClick={() => handleChip(chip.message)}
+                    onClick={() => handleChip(chip)}
                     disabled={disabled}
                     className={`
             ${chipClass}

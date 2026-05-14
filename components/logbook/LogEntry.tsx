@@ -42,6 +42,7 @@ export default function LogEntryRow({ entry, isSelected, onClick }: LogEntryProp
 
     return (
         <button
+            type="button"
             onClick={() => onClick(entry)}
             className={`
         w-full flex items-center gap-3 px-4 py-3
