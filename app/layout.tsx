@@ -2,6 +2,8 @@
 import type { Metadata } from 'next'
 import { Noto_Serif_JP, Noto_Sans_JP, DM_Mono } from 'next/font/google'
 import './globals.css'
+import BottomNav from '@/components/layout/BottomNav'
+import KeyboardWatcher from '@/components/layout/Keyboardwatcher'
 
 // ─── Font loading ────────────────────────────────────────────────────────────
 //
@@ -53,12 +55,19 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      // Attach all three font CSS variables to <html>.
-      // Every element in the document tree inherits them.
       className={`${notoSerif.variable} ${notoSans.variable} ${dmMono.variable}`}
     >
       <body>
+        {/* KeyboardWatcher is a client component that runs useKeyboard.
+            It renders nothing — purely a side-effect component.
+            We need it here because layout.tsx is a server component and
+            cannot call hooks directly. */}
+        <KeyboardWatcher />
+
         {children}
+
+        {/* Bottom nav — visible on all routes, hidden when keyboard is open */}
+        <BottomNav />
       </body>
     </html>
   )

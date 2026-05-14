@@ -42,6 +42,7 @@ export const runtime = "edge";
 interface QuestionsRequestBody {
   type: QuestionType;
   subMode: SubMode;
+  recentKanji?: string[]; // optional, used for kanji question generation to avoid repeats
 }
 
 // ─── JSON extraction ──────────────────────────────────────────────────────────
@@ -87,16 +88,21 @@ function extractJSON(text: string): unknown {
  * Makes one attempt at generating a valid question.
  * Returns the validated Question or null if generation/validation fails.
  */
-async function attemptGeneration(type: QuestionType) {
-  const system = generateQuestionPrompt(type);
+async function attemptGeneration(type: QuestionType, avoidKanji?: string[]) {
+  let system = generateQuestionPrompt(type);
 
-  const model = type === "kanji" ? "llama-3.3-70b-versatile" : "qwen/qwen3-32b";
+  if (type === "kanji" && avoidKanji?.length) {
+    system += `\n\n**DO NOT USE ANY OF THESE KANJI:** ${avoidKanji.join(", ")}`;
+  }
+
+  const model =
+    type === "kanji" ? "llama-3.3-70b-versatile" : "llama-3.3-70b-versatile";
 
   const { text } = await generateText({
     system,
     prompt: GENERATE_TRIGGER,
     maxTokens: type === "reading" ? 1200 : 700,
-    model, 
+    model,
   });
 
   const parsed = extractJSON(text);
@@ -155,9 +161,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { type, recentKanji } = body; // ← extract
+
   // 2. First attempt
   try {
-    const question = await attemptGeneration(body.type);
+    const question = await attemptGeneration(type, recentKanji); // ← pass
 
     if (question) {
       return NextResponse.json(question);
@@ -171,7 +179,7 @@ export async function POST(req: NextRequest) {
   console.warn("[questions] First attempt failed — retrying once");
 
   try {
-    const question = await attemptGeneration(body.type);
+    const question = await attemptGeneration(type, recentKanji); // ← pass
 
     if (question) {
       return NextResponse.json(question);

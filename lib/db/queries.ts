@@ -192,3 +192,7 @@ export async function getLatestTestResult() {
 
   return rows[0] ?? null;
 }
+
+export async function getAllTestResults() {
+  return db.select().from(testResults).orderBy(desc(testResults.takenAt));
+}

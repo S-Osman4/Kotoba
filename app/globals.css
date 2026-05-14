@@ -61,6 +61,13 @@
   --color-wrong-bg: #fcebeb;
   --color-wrong-border: #f09595;
   --color-wrong-text: #501313;
+  --color-wrong-accent: #E24B4A;
+
+  /* RGB channel helpers for alpha compositing — used by WelcomeScreen cover only */
+  --color-sakura-rgb: 196 114 138;
+  --color-sakura-pale-rgb: 247 236 240;
+  --color-anko-mid-rgb: 122 85 104;
+  --color-paper-rgb: 253 250 248;
 
   /* ── Font families ───────────────────────────────────────── */
   /* These reference CSS variables injected by next/font/google via layout.tsx */

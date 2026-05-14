@@ -25,6 +25,7 @@
 
 import { useState, useRef, useCallback, type KeyboardEvent } from 'react'
 import type { AppMode } from '@/types/session'
+import { useAIActionGuard } from '@/hooks/useAIActionGuard'
 
 // ─── Mode config ──────────────────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ export default function AskBar({
 }: AskBarProps) {
     const [value, setValue] = useState('')
     const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const { guard } = useAIActionGuard(3000)
 
     const config = getModeConfig(mode, answered)
 
@@ -109,14 +111,13 @@ export default function AskBar({
 
     const handleSubmit = useCallback(() => {
         if (!canSubmit) return
-        const message = value.trim()
-        setValue('')
-        // Reset textarea height
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto'
-        }
-        onSubmit(message)
-    }, [canSubmit, value, onSubmit])
+        guard(() => {
+            const message = value.trim()
+            setValue('')
+            if (textareaRef.current) textareaRef.current.style.height = 'auto'
+            onSubmit(message)
+        })
+    }, [canSubmit, value, guard, onSubmit])
 
     // ── Keyboard: Enter submits, Shift+Enter newline ────────────────────────────
 

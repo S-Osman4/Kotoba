@@ -43,6 +43,7 @@ import {
     type LogbookResponse,
     type LogbookStats,
 } from '@/types/logbook'
+import TopBar from '@/components/layout/TopBar'
 
 // ─── Skeleton row ─────────────────────────────────────────────────────────────
 function SkeletonRow() {
@@ -104,9 +105,16 @@ export default function LogbookPage() {
     const groups = groupByDate(filteredEntries)
     const isEmpty = loadState.status === 'success' && groups.length === 0
 
+    useEffect(() => {
+        if (loadState.status === 'success' && groups.length > 0 && !selectedEntry) {
+            setSelectedId(groups[0].items[0].id)
+            setSelectedEntry(groups[0].items[0])
+        }
+    }, [loadState, groups, selectedEntry])
+
     // ── Entry selection ───────────────────────────────────────────────────────
     const handleSelect = useCallback((entry: LogEntry) => {
-        if (window.innerWidth < 640) {
+        if (window.matchMedia('(max-width: 639px)').matches) {
             router.push(`/logbook/${encodeURIComponent(entry.word)}`)
             return
         }
@@ -122,15 +130,7 @@ export default function LogbookPage() {
     return (
         <div className="min-h-screen bg-paper">
             {/* Top bar */}
-            <header className="sticky top-0 z-10 bg-paper border-b border-paper-3">
-                <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <span className="font-serif text-xl text-sakura-deep font-semibold">語</span>
-                        <span className="font-serif text-md text-anko-mid">logbook</span>
-                    </div>
-                    <span className="font-mono text-xs text-anko-light">帳</span>
-                </div>
-            </header>
+            <TopBar right={<span className="font-mono text-xs text-anko-light">帳</span>} />
 
             {/* Stats row */}
             {loadState.status === 'success' && (

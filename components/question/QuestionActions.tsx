@@ -8,6 +8,8 @@
 // In Step 6 we add the ask bar and chip row here.
 // In Step 9 we add swipe gesture support.
 
+import { useAIActionGuard } from "@/hooks/useAIActionGuard"
+
 interface QuestionActionsProps {
   answered:  boolean
   onNext:    () => void
@@ -22,11 +24,16 @@ export default function QuestionActions({
   onSkip,
   loading = false,
 }: QuestionActionsProps) {
+  const { guard } = useAIActionGuard(5000) // 5s cooldown
+
+  const handleNext = () => guard(onNext)
+  const handleSkip = () => guard(onSkip)
+
   return (
     <div className="flex items-center justify-end gap-3 mt-4">
       {!answered && (
         <button
-          onClick={onSkip}
+          onClick={handleSkip}
           disabled={loading}
           className="
             font-sans text-md text-anko-light
@@ -41,7 +48,7 @@ export default function QuestionActions({
 
       {answered && (
         <button
-          onClick={onNext}
+          onClick={handleNext}
           disabled={loading}
           className="
             px-5 py-2 rounded
